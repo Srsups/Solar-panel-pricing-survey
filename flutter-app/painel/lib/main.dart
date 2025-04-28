@@ -50,7 +50,7 @@ class _SolarHomePageState extends State<SolarHomePage> {
     });
 
     try {
-      final url = Uri.parse('http://000.000.00.000:5000/calcular'); // colocar o ip da máquina (talvez precise habilitar a porta 5000 no firewall)
+      final url = Uri.parse('http://000.000.00.000:5000/calcular'); // direcionar o endereço com ngrok
       final body = {
         'consumo_mensal_kwh':    double.parse(_consumoController.text),
         'horas_sol_dia':         double.parse(_horasSolController.text),
