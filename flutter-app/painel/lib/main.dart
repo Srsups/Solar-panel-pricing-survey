@@ -36,7 +36,7 @@ class _SolarHomePageState extends State<SolarHomePage> {
   Map<String, dynamic>? _resultado;
 
   Future<void> calcularSistema() async {
-    // 1. validação simples
+    // validação simples
     if (_consumoController.text.isEmpty ||
         _horasSolController.text.isEmpty ||
         _tarifaController.text.isEmpty ||
@@ -54,7 +54,7 @@ class _SolarHomePageState extends State<SolarHomePage> {
     });
 
     try {
-      final url = Uri.parse('http://192.168.15.113:5000/calcular');
+      final url = Uri.parse('http://192.168.15.117:5000/calcular');
       final body = {
         'consumo_mensal_kwh':    double.parse(_consumoController.text),
         'horas_sol_dia':         double.parse(_horasSolController.text),
