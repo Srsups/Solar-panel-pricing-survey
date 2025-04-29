@@ -7,6 +7,8 @@ void main() {
 }
 
 class SolarApp extends StatelessWidget {
+  const SolarApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -17,6 +19,8 @@ class SolarApp extends StatelessWidget {
 }
 
 class SolarHomePage extends StatefulWidget {
+  const SolarHomePage({super.key});
+
   @override
   _SolarHomePageState createState() => _SolarHomePageState();
 }
@@ -50,7 +54,7 @@ class _SolarHomePageState extends State<SolarHomePage> {
     });
 
     try {
-      final url = Uri.parse('http://192.168.15.117:5000/calcular');
+      final url = Uri.parse('http://192.168.15.113:5000/calcular');
       final body = {
         'consumo_mensal_kwh':    double.parse(_consumoController.text),
         'horas_sol_dia':         double.parse(_horasSolController.text),
