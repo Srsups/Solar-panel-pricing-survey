@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() => runApp(SolarLoginApp());
 
@@ -33,6 +35,8 @@ class SolarLoginApp extends StatelessWidget {
     ],
   );
 
+  SolarLoginApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
@@ -49,6 +53,8 @@ class LoginScreen extends StatelessWidget {
   final Color primaryColor = Color(0xFF023047);
   final Color accentColor = Color(0xFF219EBC);
   final Color darkBlue = Color(0xFF023047);
+
+  LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -236,29 +242,163 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _consumoController    = TextEditingController();
+  final _horasSolController   = TextEditingController();
+  final _tarifaController     = TextEditingController();
+  final _precoContaController = TextEditingController();
+  final _espacoController     = TextEditingController();
+
+  bool _loading = false;
+  Map<String, dynamic>? _resultado;
+
+  Future<void> calcularSistema() async {
+    // validação simples
+    if (_consumoController.text.isEmpty ||
+        _horasSolController.text.isEmpty ||
+        _tarifaController.text.isEmpty ||
+        _precoContaController.text.isEmpty ||
+        _espacoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor, preencha todos os campos')),
+      );
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _resultado = null;
+    });
+
+    try {
+      final url = Uri.parse('http://000.000.00.000:5000/calcular'); // colocar o ip da máquina (talvez precise habilitar a porta 5000 no firewall)
+      final body = {
+        'consumo_mensal_kwh':    double.parse(_consumoController.text),
+        'horas_sol_dia':         double.parse(_horasSolController.text),
+        'tarifa_energia':        double.parse(_tarifaController.text),
+        'preco_medio_conta':     double.parse(_precoContaController.text),
+        'espaco_disponivel_m2':  double.parse(_espacoController.text),
+      };
+
+      final resp = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (resp.statusCode == 200) {
+        setState(() => _resultado = jsonDecode(resp.body));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao calcular: ${resp.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro de conexão: $e')),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _consumoController.dispose();
+    _horasSolController.dispose();
+    _tarifaController.dispose();
+    _precoContaController.dispose();
+    _espacoController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildResultado() {
+    if (_resultado == null) return SizedBox();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(),
+        Text('Resultados:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text('Potência necessária: ${_resultado!['potencia_necessaria_kwp']} kWp'),
+        Text('Quantidade de painéis: ${_resultado!['quantidade_paineis']}'),
+        Text('Área necessária: ${_resultado!['area_necessaria_m2']} m²'),
+        Text('Espaço disponível: ${_resultado!['espaco_disponivel_m2']} m²'),
+        Text('Espaço suficiente? ${_resultado!['espaco_suficiente'] ? 'Sim' : 'Não'}'),
+        if (!_resultado!['espaco_suficiente'])
+          Text('Área extra necessária: ${_resultado!['area_extra_necessaria_m2']} m²'),
+        Text('Custo total: R\$ ${_resultado!['custo_total_r\$']}'),
+        Text('Payback: ${_resultado!['payback_anos']} anos'),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Painel Solar'),
-        backgroundColor: Color(0xFFFFB703),
+        title: Text('Simulador Solar'),
         actions: [
           IconButton(
             icon: Icon(Icons.person),
             onPressed: () => context.go('/profile'),
-          )
+          ),
         ],
       ),
-      body: Center(
-        child: Text('Bem-vindo a calculadora de energia solar!',
-            style: TextStyle(fontSize: 24, color: Colors.black)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _consumoController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Consumo mensal (kWh)'),
+            ),
+            TextField(
+              controller: _horasSolController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Horas de sol por dia'),
+            ),
+            TextField(
+              controller: _tarifaController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Tarifa de energia (R\$/kWh)'),
+            ),
+            TextField(
+              controller: _precoContaController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Preço médio da conta (R\$)'),
+            ),
+            TextField(
+              controller: _espacoController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Espaço disponível (m²)'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loading ? null : calcularSistema,
+              child: _loading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text('Calcular'),
+            ),
+            const SizedBox(height: 20),
+            _buildResultado(),
+          ],
+        ),
       ),
     );
   }
 }
 
 class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -286,6 +426,8 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class ForgotPasswordScreen extends StatelessWidget {
+  const ForgotPasswordScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -302,6 +444,8 @@ class ForgotPasswordScreen extends StatelessWidget {
 }
 
 class CreateAccountScreen extends StatelessWidget {
+  const CreateAccountScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
