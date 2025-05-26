@@ -39,7 +39,11 @@ def calcular():
 
     economia_anual = preco_medio_conta * 12
     print(f"Economia Anual: {economia_anual}")
-    payback = custo_total / economia_anual if economia_anual else None
+    economia_total = economia_anual - 540 #540 é o valor médio de energia que a pessoa vai continuar pagando mesmo com energia solar (estimativa, algo entre R$30 e R$60), pois o sistema não consegue gerar 100% da energia necessária para a casa, e mesmo se gerasse, existe a tarifa de Consumo mínimo faturável ou Custo de disponibilidade
+    payback = custo_total / economia_total if economia_anual else None # não estou levando em conta a inflação, o aumento do preço da energia, etc. O payback é o tempo que leva para o investimento se pagar com a economia gerada pela energia solar. Se o payback for maior que 10 anos, não vale a pena investir em energia solar, pois o sistema pode apresentar problemas e não gerar a energia necessária para a casa. O ideal é que o payback seja menor que 5 anos.
+    anos = int(payback)  # parte inteira -> anos
+    meses = round((payback - anos) * 12)  # parte decimal convertida em meses
+    print(f"Economia Anual: {payback}")
 
     resultado = {
         'potencia_necessaria_kwp': round(potencia_necessaria_kwp, 2),
@@ -49,7 +53,7 @@ def calcular():
         'espaco_suficiente': espaco_suficiente,
         'area_extra_necessaria_m2': round(area_extra, 2),
         'custo_total_r$': round(custo_total, 2),
-        'payback_anos': round(payback, 2) if payback else None
+        'payback_anos': f'{anos} ano(s) e {meses} mes(es)' if payback else None
     }
 
     return jsonify(resultado)
