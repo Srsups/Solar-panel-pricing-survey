@@ -174,6 +174,12 @@ class LoginScreen extends StatelessWidget {
                             );
                             return;
                           }
+                          if (UserData().email != email || UserData().username == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Usuário ou senha inválidos')),
+                            );
+                            return;
+                          }
                           context.go('/home');
                         },
                         child: Center(
