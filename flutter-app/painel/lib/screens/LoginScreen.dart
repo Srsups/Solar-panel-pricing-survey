@@ -24,6 +24,14 @@ class SolarLoginApp extends StatelessWidget {
         path: '/profile',
         builder: (context, state) => ProfileScreen(),
       ),
+      GoRoute(
+        path: '/forgot',
+        builder: (context, state) => ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/create-account',
+        builder: (context, state) => CreateAccountScreen(),
+      ),
     ],
   );
 
@@ -137,7 +145,6 @@ class LoginScreen extends StatelessWidget {
                           labelStyle: TextStyle(color: darkBlue),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
                           ),
                         ),
                         style: TextStyle(color: Colors.white),
@@ -272,6 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? _resultado;
 
   Future<void> calcularSistema() async {
+    // validação simples
     if (_consumoController.text.isEmpty ||
         _horasSolController.text.isEmpty ||
         _tarifaController.text.isEmpty ||
@@ -354,18 +362,54 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Painel Solar'),
-        backgroundColor: Color(0xFFFFB703),
+        title: Text('Simulador Solar'),
         actions: [
           IconButton(
             icon: Icon(Icons.person),
             onPressed: () => context.go('/profile'),
-          )
+          ),
         ],
       ),
-      body: Center(
-        child: Text('Bem-vindo a calculadora de energia solar!',
-            style: TextStyle(fontSize: 24, color: Colors.black)),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: _consumoController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Consumo mensal (kWh)'),
+            ),
+            TextField(
+              controller: _horasSolController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Horas de sol por dia'),
+            ),
+            TextField(
+              controller: _tarifaController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Tarifa de energia (R\$/kWh)'),
+            ),
+            TextField(
+              controller: _precoContaController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Preço médio da conta (R\$)'),
+            ),
+            TextField(
+              controller: _espacoController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(labelText: 'Espaço disponível (m²)'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loading ? null : calcularSistema,
+              child: _loading
+                  ? CircularProgressIndicator(color: Colors.white)
+                  : Text('Calcular'),
+            ),
+            const SizedBox(height: 20),
+            _buildResultado(),
+          ],
+        ),
       ),
     );
   }
